@@ -11,7 +11,7 @@ The living cells are rendered as **instanced cubes** in an OpenGL 3.3 core-profi
 viewport with an orbit camera and simple lighting. Decaying cells fade through a
 color gradient, producing coral- and crystal-like structures.
 
-![screenshot placeholder](docs/screenshot.png)
+![screenshot](screenshot.png)
 
 ## What it demonstrates
 
