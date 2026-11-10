@@ -1,17 +1,44 @@
 #pragma once
-#include "Types.h"
+
 #include "CARule.h"
+
+#include <cstddef>
 #include <cstdint>
 
-// Host-side interface to the CUDA back-end (implemented in CudaAutomaton.cu).
-// Qt-free so it can be included from both host and device translation units.
+// Outcome of a batch of steps on the GPU.
+struct CudaStepResult {
+    double milliseconds = 0.0;    // upload + kernels + download
+    const char* error = nullptr;  // null on success, otherwise what went wrong
+};
 
-bool cudaAvailable();
+// The GPU back-end. It owns the two device buffers the grid ping-pongs
+// between and frees them when destroyed.
+//
+// Implemented in CudaAutomaton.cu, or by CudaAutomatonStub.cpp in builds
+// without CUDA. This header is compiled by both the host compiler and nvcc,
+// so it stays free of Qt and of CUDA types.
+class CudaAutomaton {
+public:
+    CudaAutomaton() = default;
+    ~CudaAutomaton();
 
-// Advances the grid by `substeps` steps on the GPU. `grid` is a host buffer of
-// N*N*N uint8_t states: it is uploaded, iterated on the device, and written back.
-// The elapsed GPU wall time is written to *elapsedMs.
-void cudaStepAutomaton(int N, const CARule& rule, bool wrap,
-                       uint8_t* grid, int substeps, double* elapsedMs);
+    CudaAutomaton(const CudaAutomaton&) = delete;
+    CudaAutomaton& operator=(const CudaAutomaton&) = delete;
 
-void cudaShutdown();
+    // True when the program was built with CUDA and a device is present.
+    static bool available();
+
+    // Advances the n*n*n grid in `cells` by `steps` steps: the host buffer is
+    // uploaded, iterated on the device and written back. If an error is
+    // reported the contents of `cells` have not been advanced.
+    [[nodiscard]] CudaStepResult step(std::uint8_t* cells, int n, const CARule& rule, bool wrap,
+                                      int steps);
+
+private:
+    [[nodiscard]] const char* reserve(std::size_t bytes);  // null on success
+    void release();
+
+    std::uint8_t* m_current = nullptr;  // device buffer holding the newest state
+    std::uint8_t* m_next = nullptr;     // device buffer the next step is written to
+    std::size_t m_capacity = 0;         // bytes allocated for each buffer
+};

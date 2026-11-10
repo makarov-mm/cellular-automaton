@@ -1,0 +1,21 @@
+# Formatting for this project: run `clang-format -i src/*` (clang-format 17 or newer).
+BasedOnStyle: LLVM
+IndentWidth: 4
+ColumnLimit: 100
+AccessModifierOffset: -4
+PointerAlignment: Left
+BreakBeforeBraces: Attach
+IndentCaseLabels: true
+IndentPPDirectives: BeforeHash
+AllowShortFunctionsOnASingleLine: Inline
+AllowShortIfStatementsOnASingleLine: WithoutElse
+AllowShortLoopsOnASingleLine: false
+AllowShortLambdasOnASingleLine: All
+AllowShortCaseLabelsOnASingleLine: true
+AlignConsecutiveShortCaseStatements:
+  Enabled: true
+AlignTrailingComments: true
+SpacesBeforeTrailingComments: 2
+AlwaysBreakTemplateDeclarations: Yes
+IncludeBlocks: Preserve
+SortIncludes: CaseSensitive

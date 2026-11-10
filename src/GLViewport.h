@@ -1,51 +1,68 @@
 #pragma once
-#include <QOpenGLWidget>
-#include <QOpenGLFunctions_3_3_Core>
+
+#include "CellInstance.h"
+
 #include <QMatrix4x4>
+#include <QOpenGLBuffer>
+#include <QOpenGLFunctions_3_3_Core>
+#include <QOpenGLVertexArrayObject>
+#include <QOpenGLWidget>
+#include <QPointF>
+
+#include <memory>
+#include <span>
 #include <vector>
 
-// Renders the living cells as instanced cubes with a simple orbit camera and
-// lambert lighting. Cell instance data is 4 floats each: x, y, z, stateNorm.
+class QOpenGLShaderProgram;
+
+// Draws the cells as instanced cubes, with an orbit camera and Lambert shading.
 class GLViewport : public QOpenGLWidget, protected QOpenGLFunctions_3_3_Core {
     Q_OBJECT
+
 public:
+    // The values match the palette switch in the fragment shader.
+    enum class Palette {
+        Ice,
+        Fire,
+        Viridis,
+        Rainbow,
+        Position,
+    };
+
     explicit GLViewport(QWidget* parent = nullptr);
     ~GLViewport() override;
 
-    void setGridSize(int n);
-    void setInstances(const std::vector<float>& data, int count);
-    void setPalette(int p);   // index into the shader's palette switch
+    // Replaces the cells to draw. `gridSize` is the side of the grid they
+    // belong to and `aliveState` the state of a fully alive cell; the camera
+    // re-frames the grid whenever its size changes.
+    void setCells(std::span<const CellInstance> cells, int gridSize, int aliveState);
+    void setPalette(Palette palette);
 
 protected:
     void initializeGL() override;
-    void resizeGL(int w, int h) override;
+    void resizeGL(int width, int height) override;
     void paintGL() override;
-    void mousePressEvent(QMouseEvent*) override;
-    void mouseMoveEvent(QMouseEvent*) override;
-    void wheelEvent(QWheelEvent*) override;
+    void mousePressEvent(QMouseEvent* event) override;
+    void mouseMoveEvent(QMouseEvent* event) override;
+    void wheelEvent(QWheelEvent* event) override;
 
 private:
-    GLuint m_program   = 0;
-    GLuint m_vao       = 0;
-    GLuint m_cubeVbo   = 0;
-    GLuint m_instVbo   = 0;
+    void releaseResources();
 
-    int    m_instanceCount = 0;
-    std::vector<float> m_pending;
-    bool   m_pendingDirty  = false;
+    std::unique_ptr<QOpenGLShaderProgram> m_program;
+    QOpenGLVertexArrayObject m_vertexArray;
+    QOpenGLBuffer m_cubeBuffer;
+    QOpenGLBuffer m_instanceBuffer;
 
-    int    m_gridN = 48;
+    std::vector<CellInstance> m_cells;
+    bool m_cellsChanged = false;  // m_cells is newer than m_instanceBuffer
+    int m_gridSize = 0;
+    int m_aliveState = 1;
+    Palette m_palette = Palette::Ice;
 
-    QMatrix4x4 m_proj;
-    float  m_yaw   = 30.0f;
-    float  m_pitch = 20.0f;
-    float  m_dist  = 90.0f;
-    QPoint m_lastMouse;
-
-    int    m_palette = 0;
-
-    GLint  m_locMVP = -1, m_locLightDir = -1, m_locCell = -1, m_locCenter = -1;
-    GLint  m_locPalette = -1;
-
-    GLuint compileProgram();
+    QMatrix4x4 m_projection;
+    float m_yaw = 30.0f;       // degrees
+    float m_pitch = 20.0f;     // degrees
+    float m_distance = 90.0f;  // camera distance from the grid center, in cells
+    QPointF m_lastMousePosition;
 };

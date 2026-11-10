@@ -1,52 +1,47 @@
 #pragma once
-#include <QMainWindow>
-#include "Types.h"
+
 #include "Automaton.h"
 
+#include <QMainWindow>
+
 class GLViewport;
+class QCheckBox;
 class QComboBox;
-class QSpinBox;
 class QLabel;
 class QPushButton;
+class QSpinBox;
 class QTimer;
-class QCheckBox;
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
+
 public:
     explicit MainWindow(QWidget* parent = nullptr);
-    ~MainWindow() override;
-
-private slots:
-    void onTick();
-    void onRuleChanged();
-    void onGridChanged();
-    void onControlsChanged();
-    void onPlayPause();
-    void onReset();
-    void onBenchmark();
 
 private:
-    Backend currentBackend() const;
-    void    pushInstances();       // collect + upload current grid to the viewport
+    QWidget* createParametersBox();
+    QWidget* createTimingBox();
 
-    AutomatonParams m_params;
-    Automaton       m_auto;
-    QTimer*         m_timer   = nullptr;
-    bool            m_playing = true;
+    void resetAutomaton();  // new grid from the selected rule and grid size
+    void advance();         // one timer tick: step the simulation and redraw
+    void showCells();       // hand the current grid to the viewport
+    void togglePlayback();
+    void runBenchmark();
 
-    GLViewport*  m_view         = nullptr;
-    QComboBox*   m_ruleCombo    = nullptr;
-    QComboBox*   m_gridCombo    = nullptr;
-    QComboBox*   m_backendCombo = nullptr;
-    QComboBox*   m_paletteCombo = nullptr;
-    QCheckBox*   m_wrapCheck    = nullptr;
-    QSpinBox*    m_substepsSpin = nullptr;
-    QPushButton* m_playButton   = nullptr;
-    QLabel*      m_timingLabel  = nullptr;
-    QLabel*      m_benchLabel   = nullptr;
-    QLabel*      m_cellsLabel   = nullptr;
+    Backend selectedBackend() const;
 
-    std::vector<float> m_instanceScratch;
-    bool m_suppress = false;
+    Automaton m_automaton;
+    QTimer* m_timer = nullptr;  // runs while the simulation is playing
+
+    GLViewport* m_view = nullptr;
+    QComboBox* m_ruleCombo = nullptr;
+    QComboBox* m_gridCombo = nullptr;
+    QSpinBox* m_stepsSpin = nullptr;
+    QComboBox* m_backendCombo = nullptr;
+    QComboBox* m_paletteCombo = nullptr;
+    QCheckBox* m_wrapCheck = nullptr;
+    QPushButton* m_playButton = nullptr;
+    QLabel* m_timingLabel = nullptr;
+    QLabel* m_cellsLabel = nullptr;
+    QLabel* m_benchmarkLabel = nullptr;
 };
